@@ -3,8 +3,18 @@ let todoItems = [];
 
 // função para renderizar os itens da lista
 function renderTodo(todo) {
+    localStorage.setItem('todoItemsRef', JSON.stringify(todoItems));
     // selecionando o primeiro elemento da lista de todos
     const list = document.querySelector('.js-todo-list');
+
+    // seleciona o item atual da todo list na dom
+    const item = document.querySelector(`[data-key='${todo.id}']`);
+
+    if(todo.deleted) {
+        // remove o item da dom
+        item.remove();
+        return
+    }
 
     // checando se o todo.checked é true, se for muda o 'isChecked' para 'done', se n passa uma string vazia
     const isChecked = todo.checked ? 'done': '';
@@ -26,8 +36,14 @@ function renderTodo(todo) {
     </button>
     `;
 
-    // append do elemento para a DOM
-    list.append(node);
+    // se o item exite na dom
+    if(item) {
+        // replace it
+        list.replaceChild(node, item);
+    } else {
+        // se não appenda pro fim da lista
+        list.append(node);
+    }
 }
 
 // função que cria um objeto baseado no input e o coloca na lista todoItems
@@ -47,6 +63,18 @@ function toggleDone(key) {
 
     todoItems[index].checked = !todoItems[index].checked;
     renderTodo(todoItems[index]);
+}
+
+function deleteTodo(key) {
+    const index = todoItems.findIndex(item => item.id === Number(key));
+
+    const todo = {
+        deleted: true,
+        ...todoItems[index]
+    };
+
+    todoItems = todoItems.filter(item => item.id !== Number(key));
+    renderTodo(todo);
 }
 
 // selecionando o elemento form
@@ -75,4 +103,19 @@ list.addEventListener('click', event => {
         const itemKey = event.target.parentElement.dataset.key;
         toggleDone(itemKey);
     }
+
+    if (event.target.classList.contains('js-delete-todo')) {
+        const itemKey = event.target.parentElement.dataset.key;
+        deleteTodo(itemKey);
+    }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ref = localStorage.getItem('todoItemsRef');
+    if (ref) {
+      todoItems = JSON.parse(ref);
+      todoItems.forEach(t => {
+        renderTodo(t);
+      });
+    }
+  });
